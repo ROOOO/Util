@@ -2,6 +2,7 @@
 import os
 import re
 import platform
+import attr
 
 from util import CSystem
 
@@ -12,51 +13,49 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-class WebElement:
+class CWebElement:
     def __init__(self, driver):
-        self.driver = driver
+        self.__driver = driver
         self.element = 0
-    def find(self, enum, arg):
-        enum = enum.lower()
-        try:
-            if enum == 'name':
-                self.element = self.driver.find_element_by_name(arg)
-                # print self.element
-            elif enum == 'xpath':
-                self.element = self.driver.find_element_by_xpath(arg)
-            elif enum == 'xpaths':
-                self.element = self.driver.find_elements_by_xpath(arg)
-            elif enum == 'id':
-                self.element = self.driver.find_element_by_id(arg)
-            elif enum == 'tagname':
-                self.element = self.driver.find_element_by_tag_name(arg)
-        except:
-            pass
-            # self.driver.Quit()
+
+    def Find(self, by, arg):
+        # http://selenium-python.readthedocs.io/locating-elements.html
+        by = by.lower()
+        if by == 'xpaths':
+            by = 'find_elements_by_xpath'
+        else:
+            by = 'find_element_by_' + by
+        self.element = getattr(self.__driver, by)(arg)
         return self
-    def sendKeys(self, s):
+
+    def Count(self):
+        return len(self.element)
+
+    def SendKeys(self, s):
         self.element.send_keys(s)
         return self
 
-    @property
-    def element(self):
+    def Keys(self, key):
+        return getattr(Keys, key)
+
+    def GetElements(self):
         return self.element
 
 class CWeb:
     def __init__(self, settings = {}, ws = '', cookie = ''):
-        self.ss = CSystem()
+        self.__ss = CSystem()
         if ws != '':
-            self.workSpace = ws
+            self.__workSpace = ws
         else:
-            self.workSpace = os.path.join(self.ss.GetDirName(self.ss.GetDirName(self.ss.GetRealPath(__file__))), '3rdTools')
+            self.__workSpace = os.path.join(self.__ss.GetDirName(self.__ss.GetDirName(self.__ss.GetRealPath(__file__))), '3rdTools')
 
         if settings != {}:
-            self.driverType = settings['Driver'][settings['Driver']['use']].lower()
+            self.__driverType = settings['Driver'][settings['Driver']['use']].lower()
         else:
-            self.driverType = 'phantomjs'
-        self.initDriver(cookie)
+            self.__driverType = 'phantomjs'
+        self.__InitDriver(cookie)
 
-    def initDriver(self, cookie):
+    def __InitDriver(self, cookie):
         args = []
         if cookie != '':
             args.append('--cookies-file=' + cookie)
@@ -72,23 +71,21 @@ class CWeb:
 
         sysstr = platform.system()
         if sysstr == 'Linux':
-            self.__class__.CU.runProcess('chmod +x ' + os.path.join(self.workSpace, 'phantomjs'), usepopen = True)
-            self.driver = webdriver.PhantomJS(os.path.join(self.workSpace, 'phantomjs'), service_args = args)
-            # self.driver = webdriver.Chrome()
-            self.driverType = 'phantomjs'
+            self.__ss.RunProcess('chmod +x ' + os.path.join(self.__workSpace, 'phantomjs'), usepopen = True)
+            self.__driver = webdriver.PhantomJS(os.path.join(self.__workSpace, 'phantomjs'), service_args = args)
+            self.__driverType = 'phantomjs'
         elif sysstr == 'Windows':
-            if self.driverType == 'phantomjs':
-                self.__driver = webdriver.PhantomJS(os.path.join(self.workSpace, 'phantomjs_win.exe'), service_args = args)
-            elif self.driverType == 'chrome':
-                print os.path.join(self.workSpace, 'chromedriver.exe')
-                self.__driver = webdriver.Chrome(os.path.join(self.workSpace, 'chromedriver.exe'))
+            if self.__driverType == 'phantomjs':
+                self.__driver = webdriver.PhantomJS(os.path.join(self.__workSpace, 'phantomjs_win.exe'), service_args = args)
+            elif self.__driverType == 'chromedriver':
+                self.__driver = webdriver.Chrome(os.path.join(self.__workSpace, 'chromedriver.exe'))
         elif sysstr == 'Darwin':
             # self.__class__.CU.runProcess('chmod +x ./phantomjs', usepopen = True)
             # self.driver = webdriver.PhantomJS(os.path.join(os.path.split(os.path.realpath(__file__))[0], 'phantomjs'))
             self.__driver = webdriver.Chrome()
         self.wait = WebDriverWait(self.__driver, 5)
 
-    def GetDriver(self, driver):
+    def GetDriver(self, driver = ''):
         driver = driver == '' and self.__driver or driver
         return driver
 
@@ -96,33 +93,31 @@ class CWeb:
         page = page.lower()
         if not re.match(r'http', page):
             page = 'http://' + page
-        self.GetDriver(driver).get(page)
-        return self.__driver
+        driver = self.__driver.get(page)
+        return self
 
-    def GoBack(self, driver = ''):
-        self.GetDriver(driver).back()
-    def Forward(self, driver = ''):
-        self.GetDriver(driver).forward()
+    def GoBack(self):
+        self.__driver.back()
+    def Forward(self):
+        self.__driver.forward()
 
-    def GetPageSource(self, driver = ''):
-        driver = driver == '' and self.__driver or driver
-        return driver.page_source
+    def GetPageSource(self):
+        return self.__driver.page_source
 
-    def WaitUntil(self, condition, enum = '', arg = ''):
-        enum = enum.lower()
-        if condition == 'invisibility_of_element_located':
-            if enum == 'xpath':
-                return self.wait.until(EC.invisibility_of_element_located((By.XPATH, arg)))
-        elif condition == 'element_to_be_clickable':
-            if enum == 'xpath':
-                return self.wait.until(EC.element_to_be_clickable((By.XPATH, arg)))
-        elif condition == 'alert_is_present':
-            return self.wait.until(EC.alert_is_present())
+    def WaitUntil(self, condition, by, arg, b = ''):
+        # http://selenium-python.readthedocs.io/waits.html
+        if b == '':
+            elem = self.wait.until(getattr(EC, condition)((getattr(By, by), arg)))
+        elif isinstance(b, bool):
+            elem = self.wait.until(getattr(EC, condition)(arg, b))
+        else:
+            elem = self.wait.until(getattr(EC, condition)((getattr(By, by), arg), b))
+        return [self, elem]
 
     def ExecScript(self, script, driver = ''):
-        self.GetDriver(driver).execute_script(script)
+        self.__driver.execute_script(script)
 
     def Quit(self, driver = '', cookie = ''):
-        self.GetDriver(driver).quit()
-        if self.driverType != '':
-            self.__class__.CU.killProcess([self.driverType], [cookie])
+        self.__driver.quit()
+        if self.__driverType != '':
+            self.__ss.KillProcess([self.__driverType + '*'], [cookie])
