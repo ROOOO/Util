@@ -1,8 +1,10 @@
 #coding: utf-8
 import os
 import time
+import shutil
 import platform
 import subprocess
+import traceback
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -70,3 +72,13 @@ class CSystem:
 
     def GetRealPath(self, file):
         return os.path.realpath(file)
+
+    def CopyFile(self, src, dst):
+        shutil.copyfile(src, dst)
+
+    def Traceback(self, Exception, e):
+        print str(Exception)
+        print str(e)
+        print repr(e)
+        print e.message
+        print traceback.format_exc()

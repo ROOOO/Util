@@ -52,6 +52,7 @@ class CWeb:
             self.__driverType = settings['Driver'][settings['Driver']['use']].lower()
         else:
             self.__driverType = 'phantomjs'
+            print '111'
         self.__InitDriver(cookie)
 
     def __InitDriver(self, cookie):
@@ -82,7 +83,7 @@ class CWeb:
             # self.__class__.CU.runProcess('chmod +x ./phantomjs', usepopen = True)
             # self.driver = webdriver.PhantomJS(os.path.join(os.path.split(os.path.realpath(__file__))[0], 'phantomjs'))
             self.__driver = webdriver.Chrome()
-        self.wait = WebDriverWait(self.__driver, 5)
+        self.wait = WebDriverWait(self.__driver, 10)
 
     def GetDriver(self, driver = ''):
         driver = driver == '' and self.__driver or driver
