@@ -2,7 +2,6 @@
 import os
 import re
 import platform
-import attr
 
 from util import CSystem
 

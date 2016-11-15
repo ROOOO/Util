@@ -3,6 +3,9 @@ import os
 import time
 import platform
 import subprocess
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 class CSystem:
     def __init__(self):
@@ -26,6 +29,9 @@ class CSystem:
             return os.path.getctime(filePath)
         elif cm == 'm':
             return os.path.getmtime(filePath)
+
+    def StrfTime(self, t):
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
 
     def WriteFile(self, filePath, blocks):
         with open(filePath, 'w+') as file:
