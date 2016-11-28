@@ -1,5 +1,6 @@
 #coding: utf-8
 import psycopg2
+import sqlite3
 
 class CDB:
 	def __init__(self, dbName, un, pw, host = '127.0.0.1', port = '5432'):
@@ -10,36 +11,43 @@ class CDB:
 		self.__port = port
 
 		try:
-			self.__connect = psycopg2.connect(database = self.__dbName, user = self.__un, password = self.__pw, host = self.__host, port = self.__port)
+			self.connect = psycopg2.connect(database = self.__dbName, user = self.__un, password = self.__pw, host = self.__host, port = self.__port)
 		except:
 			print 'DB Connection ERROR!!!'
 		else:
-			CDB.Connect = self.__connect
-			self.__cursor = self.__connect.cursor()
-			CDB.Cursor = self.__connect
+			self.cursor = self.connect.cursor()
 
 	def Commit(self):
-		self.__connect.commit()
+		self.connect.commit()
 
 	def Close(self):
-		self.__cursor.close()
-		self.__connect.close()
+		self.cursor.close()
+		self.connect.close()
 
 	def Exec(self, sql):
-		self.__cursor.execute(sql)
+		self.cursor.execute(sql)
+
+class CDBSqlite(CDB):
+	def __init__(self, path):
+		try:
+			self.connect = sqlite3.connect(path)
+		except:
+			print 'DB Connection ERROR!!!'
+		else:
+			self.cursor = self.connect.cursor()
 	
 class CCompress:
-	def __init__(self, value):
-		self.__value = value
+	def __init__(self):
+		pass
 
-	def Decode(self):
+	def Decode(self, value):
 		try:
-			return self.__value.decode('base64').decode('bz2').decode('utf-8').encode('gbk')
+			return value.decode('base64').decode('bz2').decode('utf-8').encode('gbk')
 		except Exception:
-			return self.__value
+			return value
 
-	def Encode(self):
+	def Encode(self, value):
 		try:
-			return self.__value.decode('gbk').encode('utf-8').encode('bz2').encode('base64')
+			return value.decode('gbk').encode('utf-8').encode('bz2').encode('base64')
 		except Exception:
-			return self.__value
+			return value
