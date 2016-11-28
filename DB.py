@@ -24,9 +24,6 @@ class CDB:
 		self.cursor.close()
 		self.connect.close()
 
-	def Exec(self, sql):
-		self.cursor.execute(sql)
-
 class CDBSqlite(CDB):
 	def __init__(self, path):
 		try:
